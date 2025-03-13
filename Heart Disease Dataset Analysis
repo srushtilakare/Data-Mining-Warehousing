@@ -1,0 +1,107 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+df = pd.read_csv(r"C:\Users\ECS\Downloads\heart.csv")
+
+df.info()
+ 
+
+df.describe()
+# The df.describe funcation gives a means std count min count of each row 
+
+print(df.isnull())
+#By this we check that there is any null value in dataset 
+print(df.isnull().sum())
+#So there is no null value in dataset as it all show 0 values 
+
+duplicates = df[df.duplicated()]
+print(duplicates)
+
+df=df.drop_duplicates()
+sns.boxplot(df.age)
+
+
+plt.figure(figsize=(12,8))
+for column in df.select_dtypes(include=np.number).columns:
+    sns.boxplot(x=df[column])
+    plt.title(f'Boxplot for {column}')
+    plt.show()
+
+# To remove Outlier we use the IQR 
+IQR=df.oldpeak.quantile(0.75)-df.oldpeak.quantile(0.25)
+IQR
+#The iqr is 1.6
+
+lower_limit=df.oldpeak.quantile(0.25)-1.5*IQR
+lower_limit
+#-2.400000000000004
+upper_limt=df.oldpeak.quantile(0.75)+1.5*IQR
+upper_limt
+#4.0
+
+outliers_df=np.where(df.oldpeak>upper_limt,True,
+                     np.where(df.oldpeak<lower_limit,True,False))
+df.trimmed=df.loc[~outliers_df]
+df.shape #(50, 5)
+df.trimmed.shape #(48, 5)
+sns.boxplot(df.trimmed.oldpeak)
+
+ print(df.oldpeak.min())
+# The outlier is removed so min valued get changed before that the min values was different 
+
+print(df.oldpeak.median())
+
+plt.figure(figsize=(8, 5))
+sns.scatterplot(x=df['age'], y=df['thalach'], alpha=0.6, color='b')
+plt.xlabel("Age")
+plt.ylabel("Max Heart Rate (thalach)")
+plt.title("Scatter Plot: Age vs Max Heart Rate")
+plt.show()
+#This is the scatter plot of the Age Vs Max heart Rate 
+
+df.plot(kind='scatter',x='age',y='thalach');
+plt.show()
+#This a simple way for scatter plot
+
+# Quantile Plot for Cholesterol
+plt.figure(figsize=(8, 5))
+sns.histplot(df['chol'], bins=30, kde=True, color='g')
+plt.xlabel("Cholesterol Level")
+plt.ylabel("Frequency")
+plt.title("Quantile Plot: Cholesterol Distribution")
+plt.show()
+
+ # QQ Plot for Resting Blood Pressure
+import statsmodels.api as sm
+sm.qqplot(df['trestbps'], line='s', color='r')
+plt.title("QQ Plot: Resting Blood Pressure")
+plt.show()
+
+from mpl_toolkits.mplot3d import Axes3D
+fig = plt.figure(figsize=(8, 6))
+ax = fig.add_subplot(111, projection='3d')
+ax.scatter(df['age'], df['chol'], df['thalach'], c='purple', marker='o', alpha=0.6)
+
+ax.set_xlabel("Age")
+ax.set_ylabel("Cholesterol")
+ax.set_zlabel("Max Heart Rate (thalach)")
+ax.set_title("3D Box Plot: Age vs Cholesterol vs Max Heart Rate")
+    
+plt.show()
+
+plt.figure(figsize=(8, 5))
+sns.histplot(df['chol'], bins=30, kde=True, color='g')
+plt.xlabel("Cholesterol Level")
+plt.ylabel("Frequency")
+plt.title("Histogram: Cholesterol Distribution")
+plt.show()
+
+print(df.oldpeak.median())print(df.oldpeak.median())
+print(df.age.mean())
+print(df.cp.mode())
+print(df.age.mode())
+print(df.age.var())
+print(df.age.min())
+print(df.age.std())
