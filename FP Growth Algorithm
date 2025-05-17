@@ -1,0 +1,130 @@
+from collections import defaultdict
+
+class TreeNode:
+    def __init__(self, item, count, parent):
+        self.item = item
+        self.count = count
+        self.parent = parent
+        self.children = {}
+        self.link = None
+
+    def increase_count(self, count):
+        self.count += count
+
+    def display(self, indent=0):
+        print('  ' * indent + f'{self.item}:{self.count}')
+        for child in self.children.values():
+            child.display(indent + 1)
+
+
+def count_frequent_items(transactions, min_support):
+    item_counts = defaultdict(int)
+    for transaction in transactions:
+        for item in transaction:
+            item_counts[item] += 1
+    return {item: count for item, count in item_counts.items() if count >= min_support}
+
+
+def order_transaction(transaction, item_counts):
+    return sorted([item for item in transaction if item in item_counts],
+                  key=lambda x: (-item_counts[x], x))
+
+
+def insert_transaction(items, node, header_table):
+    first_item = items[0]
+    if first_item in node.children:
+        node.children[first_item].increase_count(1)
+    else:
+        new_node = TreeNode(first_item, 1, node)
+        node.children[first_item] = new_node
+
+        if header_table[first_item] is None:
+            header_table[first_item] = new_node
+        else:
+            while header_table[first_item].link:
+                header_table[first_item] = header_table[first_item].link
+            header_table[first_item].link = new_node
+
+    if len(items) > 1:
+        insert_transaction(items[1:], node.children[first_item], header_table)
+
+
+def construct_fp_tree(transactions, min_support):
+    item_counts = count_frequent_items(transactions, min_support)
+    if not item_counts:
+        return None, None
+
+    header_table = {item: None for item in item_counts}
+    root = TreeNode("Null", 1, None)
+
+    for transaction in transactions:
+        ordered_items = order_transaction(transaction, item_counts)
+        if ordered_items:
+            insert_transaction(ordered_items, root, header_table)
+
+    return root, header_table
+
+
+def find_prefix_paths(base_node):
+    paths = []
+    while base_node:
+        path = []
+        parent = base_node.parent
+        while parent and parent.item != "Null":
+            path.append(parent.item)
+            parent = parent.parent
+        if path:
+            paths.append((path[::-1], base_node.count))
+        base_node = base_node.link
+    return paths
+
+
+def mine_fp_tree(header_table, min_support, prefix=set(), frequent_patterns={}):
+    items = sorted(header_table.items(), key=lambda x: x[1].count if x[1] else 0)
+
+    for item, node in items:
+        if node is None:
+            continue
+        new_pattern = prefix.union([item])
+        support = 0
+        temp_node = node
+        while temp_node:
+            support += temp_node.count
+            temp_node = temp_node.link
+        if support >= min_support:
+            frequent_patterns[frozenset(new_pattern)] = support
+            conditional_paths = find_prefix_paths(node)
+            conditional_transactions = []
+            for path, count in conditional_paths:
+                conditional_transactions.extend([path] * count)
+            cond_tree, cond_header = construct_fp_tree(conditional_transactions, min_support)
+            if cond_header:
+                mine_fp_tree(cond_header, min_support, new_pattern, frequent_patterns)
+
+    return frequent_patterns
+
+
+# Sample dataset
+transactions = [
+    ['milk', 'bread', 'butter'],
+    ['bread', 'butter', 'jam'],
+    ['milk', 'bread', 'butter', 'jam'],
+    ['bread', 'butter'],
+    ['milk', 'bread'],
+    ['butter', 'jam']
+]
+
+min_support = 2
+
+fp_tree_root, header_table = construct_fp_tree(transactions, min_support)
+
+if fp_tree_root:
+    print("FP-Tree:")
+    fp_tree_root.display()
+
+    patterns = mine_fp_tree(header_table, min_support)
+    print("\nFrequent Patterns:")
+    for pattern, count in patterns.items():
+        print(f"{set(pattern)} -> {count}")
+else:
+    print("No frequent itemsets found.")
