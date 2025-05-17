@@ -1,0 +1,58 @@
+import nltk
+import random
+import string
+from nltk.corpus import movie_reviews, stopwords
+from nltk.stem import PorterStemmer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.metrics import precision_score, recall_score
+
+# Download necessary NLTK data
+nltk.download('movie_reviews')
+nltk.download('stopwords')
+nltk.download('punkt')  # Fix for word_tokenize error
+nltk.download('punkt_tab') # Download the punkt_tab data
+
+# Load dataset
+documents = [(movie_reviews.raw(fileid), category)
+             for category in movie_reviews.categories()
+             for fileid in movie_reviews.fileids(category)]
+random.shuffle(documents)
+
+# Preprocessing setup
+stop_words = set(stopwords.words('english'))
+stemmer = PorterStemmer()
+
+def preprocess(text):
+    tokens = nltk.word_tokenize(text.lower())             # Lowercase + tokenize
+    tokens = [t for t in tokens if t.isalpha()]           # Remove punctuation/numbers
+    tokens = [t for t in tokens if t not in stop_words]   # Remove stopwords
+    stemmed = [stemmer.stem(t) for t in tokens]           # Apply stemming
+    return ' '.join(stemmed)
+
+# Preprocess all documents
+texts = [preprocess(doc) for (doc, label) in documents]
+labels = [label for (doc, label) in documents]
+
+# Convert text to vector (TF-IDF)
+vectorizer = TfidfVectorizer(max_features=3000)
+X = vectorizer.fit_transform(texts)
+y = labels
+
+# Train/test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train classifier
+model = MultinomialNB()
+model.fit(X_train, y_train)
+
+# Predict and evaluate
+y_pred = model.predict(X_test)
+
+# Evaluation
+precision = precision_score(y_test, y_pred, pos_label='pos')
+recall = recall_score(y_test, y_pred, pos_label='pos')
+
+print("Precision:", round(precision, 2))
+print("Recall:", round(recall, 2))
