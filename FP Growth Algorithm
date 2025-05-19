@@ -2,34 +2,35 @@ from collections import defaultdict
 
 class TreeNode:
     def __init__(self, item, count, parent):
-        self.item = item
-        self.count = count
-        self.parent = parent
-        self.children = {}
-        self.link = None
+        self.item = item # name of the item (e.g., 'milk', 'bread')
+        self.count = count # number of times this node is shared in different paths
+        self.parent = parent # parent node to trace back paths
+        self.children = {} # a dictionary of child nodes
+        self.link = None #next node of the same item (used to traverse similar items in the header table)
 
     def increase_count(self, count):
-        self.count += count
+        self.count += count # increases count when an existing path is reused.
 
-    def display(self, indent=0):
+    def display(self, indent=0): #Prints tree structure with indentation.
         print('  ' * indent + f'{self.item}:{self.count}')
         for child in self.children.values():
             child.display(indent + 1)
 
-
+# Counting frequent items
 def count_frequent_items(transactions, min_support):
     item_counts = defaultdict(int)
-    for transaction in transactions:
+    for transaction in transactions: #Then, it filters out items that do not meet the minimum support threshold.
         for item in transaction:
             item_counts[item] += 1
     return {item: count for item, count in item_counts.items() if count >= min_support}
 
-
+#Ordering Items in Transactions
 def order_transaction(transaction, item_counts):
     return sorted([item for item in transaction if item in item_counts],
                   key=lambda x: (-item_counts[x], x))
 
 
+#insertion
 def insert_transaction(items, node, header_table):
     first_item = items[0]
     if first_item in node.children:
@@ -48,11 +49,23 @@ def insert_transaction(items, node, header_table):
     if len(items) > 1:
         insert_transaction(items[1:], node.children[first_item], header_table)
 
+'''Inserts sorted items into the tree.
+If the item already exists in the current node’s children → increase count.
+Else → create a new node.
+Header Table Link:
+Each item in the header table keeps a link to the first node in the tree with that item.
+Later nodes with same item are connected via node.link (linked list). '''
+
+
 
 def construct_fp_tree(transactions, min_support):
     item_counts = count_frequent_items(transactions, min_support)
     if not item_counts:
         return None, None
+
+'''For a given item node, this finds all the paths from root to that item, along with the count.
+
+Helps to build conditional FP-Trees for mining sub-patterns.''
 
     header_table = {item: None for item in item_counts}
     root = TreeNode("Null", 1, None)
@@ -128,3 +141,6 @@ if fp_tree_root:
         print(f"{set(pattern)} -> {count}")
 else:
     print("No frequent itemsets found.")
+
+
+#Header Table -	Keeps track of the first occurrence and links of each frequent item in the tree.
