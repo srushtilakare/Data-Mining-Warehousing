@@ -144,3 +144,71 @@ else:
 
 
 #Header Table -	Keeps track of the first occurrence and links of each frequent item in the tree.
+
+''' 
+
+This code implements the **FP-Growth algorithm** to find **frequent itemsets** in a list of transactions without generating candidates (like Apriori does).
+
+---
+
+### 🔹 1. **TreeNode Class**
+
+Represents a node in the **FP-Tree**, storing:
+
+* `item` name
+* `count` (frequency)
+* `parent` node
+* `children` (dictionary of child nodes)
+* `link` to the next node of the same item (used in header table)
+
+---
+
+### 🔹 2. **count\_frequent\_items()**
+
+Counts how often each item appears and removes infrequent ones (based on `min_support`).
+
+---
+
+### 🔹 3. **order\_transaction()**
+
+Sorts each transaction's items by how frequent they are (descending) to ensure a compact tree.
+
+---
+
+### 🔹 4. **insert\_transaction()**
+
+Inserts a sorted transaction into the FP-Tree and updates links in the header table.
+
+---
+
+### 🔹 5. **construct\_fp\_tree()**
+
+Builds the full FP-Tree by:
+
+* Counting frequent items
+* Creating a root node
+* Inserting all transactions into the tree
+
+---
+
+### 🔹 6. **find\_prefix\_paths()**
+
+Finds all paths in the tree that end with a specific item (used to build conditional trees).
+
+---
+
+### 🔹 7. **mine\_fp\_tree()**
+
+* Recursively mines the FP-Tree to find **frequent patterns**.
+* Builds **conditional trees** for each item and extracts deeper patterns.
+
+---
+
+### 🔹 8. **Sample Execution**
+
+* A small dataset of 6 transactions is used.
+* The FP-Tree is built and displayed.
+* Frequent itemsets are printed based on `min_support`.
+
+ 
+'''
